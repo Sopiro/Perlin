@@ -102,17 +102,69 @@ class Bitmap
 
 class Perlin
 {
+    constructor(seed)
+    {
+        this.seed = seed;
+    }
+
     // From https://en.wikipedia.org/wiki/Perlin_noise#Implementation
     getGradient(ix, iy)
     {
         let random = 2920.0 * Math.sin(ix * 21942.0 + iy * 171324.0 + 8912.0) * Math.cos(ix * 23157.0 * iy * 217832.0 + 9758.0);
         return new Vector2(Math.cos(random), Math.sin(random));
     }
+
+    dotGridGradient(ix, iy, x, y)
+    {
+        const gradient = this.getGradient(ix, iy);
+
+        const dx = x - ix;
+        const dy = y - iy;
+
+        return (dx * gradient.x + dy * gradient.y);
+    }
+
+    interpolate(a0, a1, w)
+    {
+        if (0.0 > w) return a0;
+        if (1.0 < w) return a1;
+
+        // Linear interpolation
+        // return (a1 - a0) * w + a0;
+
+        // Smooth interpolation
+        // return (a1 - a0) * (3.0 - w * 2.0) * w * w + a0;
+
+        // Smoother interpolation
+        return (a1 - a0) * ((w * (w * 6.0 - 15.0) + 10.0) * w * w * w) + a0;
+    }
+
+    noise(x, y)
+    {
+        let x0 = Math.trunc(x);
+        let y0 = Math.trunc(y);
+        let x1 = x0 + 1;
+        let y1 = y0 + 1;
+
+        // Extract fractional part
+        let fx = x - x0;
+        let fy = y - y0;
+
+        let n0 = this.dotGridGradient(x0, y0, x, y);
+        let n1 = this.dotGridGradient(x1, y0, x, y);
+        let ix0 = this.interpolate(n0, n1, fx);
+
+        n0 = this.dotGridGradient(x0, y1, x, y);
+        n1 = this.dotGridGradient(x1, y1, x, y);
+        let ix1 = this.interpolate(n0, n1, fx);
+
+        return this.interpolate(ix0, ix1, fy);
+    }
 }
 
 function main()
 {
-    let perlin = new Perlin();
+    let perlin = new Perlin(0);
 
     let cvs = document.getElementById("cvs");
     let ctx = cvs.getContext("2d");
@@ -120,16 +172,24 @@ function main()
     cvs.setAttribute("width", 800);
     cvs.setAttribute("height", 600);
 
-    let t = new Bitmap(100, 100);
+    let t = new Bitmap(600, 600);
 
-    for(let i = 0; i < t.pixels.length; i++)
+    const scale = 5;
+
+    for (let y = 0; y < t.height; y++)
     {
-        t.pixels[i] = randomColor();
+        let yy = y / t.height * scale;
+        for (let x = 0; x < t.width; x++)
+        {
+            let xx = x / t.width * scale;
+
+            t.pixels[x + y * t.width] = grayScale((perlin.noise(xx, yy) + 1) * 128);
+        }
     }
 
-    t = convertBitmapToImageData(t, 4);
+    t = convertBitmapToImageData(t, 1);
 
-    ctx.putImageData(t, 30, 30)
+    ctx.putImageData(t, 0, 0)
 }
 
 function convertBitmapToImageData(bitmap, scale)
@@ -171,6 +231,13 @@ function randomColor()
     let b = Math.trunc(Math.random() * 255);
 
     return (r << 16) | (g << 8) | b;
+}
+
+function grayScale(color)
+{
+    let g = Math.trunc(color) & 0xff;
+
+    return (g << 16) | (g << 8) | g;
 }
 
 var globalAlpha = 0xff;
