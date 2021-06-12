@@ -1,3 +1,28 @@
+
+// https://en.wikipedia.org/wiki/Linear_congruential_generator 
+class PRNG 
+{
+    constructor(seed)
+    {
+        this.m = 0x80000000; // 2**31;
+        this.a = 1103515245;
+        this.c = 12345;
+
+        this.state = (seed != undefined) ? seed : Math.floor(Math.random() * (this.m - 1));
+    }
+
+    nextInt()
+    {
+        this.state = (this.a * this.state + this.c) % this.m;
+        return this.state;
+    }
+
+    nextFloat()
+    {
+        return this.nextInt() / (this.m - 1);
+    }
+}
+
 class Vector2
 {
     constructor(x, y)
@@ -104,14 +129,33 @@ class Perlin
 {
     constructor(seed)
     {
-        this.seed = seed;
+        this.prng = new PRNG();
+
+        switch (typeof seed) {
+            case "string":
+                this.seed = seed.hashCode();
+                break;
+            case "number":
+                this.seed = seed;
+                break;
+            case "undefined":
+                this.seed = Math.floor((Math.random() * (0x80000000 - 1)) / 2.0);
+                break;
+        
+            default:
+                break;
+        }
     }
 
-    // From https://en.wikipedia.org/wiki/Perlin_noise#Implementation
     getGradient(ix, iy)
     {
         let random = 2920.0 * Math.sin(ix * 21942.0 + iy * 171324.0 + 8912.0) * Math.cos(ix * 23157.0 * iy * 217832.0 + 9758.0);
-        return new Vector2(Math.cos(random), Math.sin(random));
+        this.prng.state = this.seed + Math.floor((random * (0x80000000 - 1)) / 2.0);
+
+        const rx = (this.prng.nextFloat() - 0.5) * 2;
+        const ry = (this.prng.nextFloat() - 0.5) * 2;
+
+        return new Vector2(rx, ry).normalized();
     }
 
     dotGridGradient(ix, iy, x, y)
@@ -164,7 +208,7 @@ class Perlin
 
 function main()
 {
-    let perlin = new Perlin(0);
+    let perlin = new Perlin("Perlin noise");
 
     let cvs = document.getElementById("cvs");
     let ctx = cvs.getContext("2d");
@@ -239,6 +283,20 @@ function grayScale(color)
 
     return (g << 16) | (g << 8) | g;
 }
+
+// https://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+String.prototype.hashCode = function ()
+{
+    var hash = 0, i, chr;
+    if (this.length === 0) return hash;
+    for (i = 0; i < this.length; i++)
+    {
+        chr = this.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
 
 var globalAlpha = 0xff;
 
