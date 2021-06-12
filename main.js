@@ -328,7 +328,7 @@ String.prototype.hashCode = function ()
 };
 
 var globalAlpha = 0xff;
-var WIDTH = 800;
+var WIDTH = 600;
 var HEIGHT = 600;
 
 window.onload = () =>
