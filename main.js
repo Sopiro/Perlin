@@ -17,7 +17,7 @@ class PRNG
         return this.state;
     }
 
-    nextFloat()
+    nextFloat() // 0.0 ~ 1.0
     {
         return this.nextInt() / (this.m - 1);
     }
@@ -131,7 +131,13 @@ class Perlin
     {
         this.prng = new PRNG();
 
-        switch (typeof seed) {
+        this.updateSeed(seed);
+    }
+
+    updateSeed(seed)
+    {
+        switch (typeof seed)
+        {
             case "string":
                 this.seed = seed.hashCode();
                 break;
@@ -139,9 +145,9 @@ class Perlin
                 this.seed = seed;
                 break;
             case "undefined":
-                this.seed = Math.floor((Math.random() * (0x80000000 - 1)) / 2.0);
+                this.seed = Math.floor((Math.random() * (0x80000000 - 1)));
                 break;
-        
+
             default:
                 break;
         }
@@ -150,10 +156,10 @@ class Perlin
     getGradient(ix, iy)
     {
         let random = 2920.0 * Math.sin(ix * 21942.0 + iy * 171324.0 + 8912.0) * Math.cos(ix * 23157.0 * iy * 217832.0 + 9758.0);
-        this.prng.state = this.seed + Math.floor((random * (0x80000000 - 1)) / 2.0);
+        this.prng.state = this.seed + random;
 
-        const rx = (this.prng.nextFloat() - 0.5) * 2;
-        const ry = (this.prng.nextFloat() - 0.5) * 2;
+        const rx = (this.prng.nextFloat() * 2.0) - 1.0;
+        const ry = (this.prng.nextFloat() * 2.0) - 1.0;
 
         return new Vector2(rx, ry).normalized();
     }
@@ -204,21 +210,39 @@ class Perlin
 
         return this.interpolate(ix0, ix1, fy);
     }
+
+    octaveNoise(x, y, octaves, lacunarity, persistence)
+    {
+        let total = 0.0;
+        let frequency = 1;
+        let amplitude = 1;
+        let maxValue = 0;  // Used for normalizing result to 0.0 - 1.0
+
+        for (let i = 0; i < octaves; i++)
+        {
+            total += this.noise(x * frequency, y * frequency) * amplitude;
+
+            maxValue += amplitude;
+
+            frequency = Math.pow(lacunarity, i + 1);
+            amplitude = Math.pow(persistence, i + 1);
+        }
+
+        return total / maxValue;
+    }
 }
 
-function main()
+function generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale)
 {
-    let perlin = new Perlin("Perlin noise");
+    let perlin = new Perlin(seed);
 
     let cvs = document.getElementById("cvs");
     let ctx = cvs.getContext("2d");
 
-    cvs.setAttribute("width", 800);
-    cvs.setAttribute("height", 600);
+    cvs.setAttribute("width", WIDTH);
+    cvs.setAttribute("height", HEIGHT);
 
-    let t = new Bitmap(600, 600);
-
-    const scale = 5;
+    let t = new Bitmap(iwidth, iheight);
 
     for (let y = 0; y < t.height; y++)
     {
@@ -226,12 +250,14 @@ function main()
         for (let x = 0; x < t.width; x++)
         {
             let xx = x / t.width * scale;
+            // let value = perlin.noise(xx, yy);
+            value = perlin.octaveNoise(xx, yy, octaves, lacu, pers);
 
-            t.pixels[x + y * t.width] = grayScale((perlin.noise(xx, yy) + 1) * 128);
+            t.pixels[x + y * t.width] = grayScale((value * scale + 1) * 0.5);
         }
     }
 
-    t = convertBitmapToImageData(t, 1);
+    t = convertBitmapToImageData(t, iscale);
 
     ctx.putImageData(t, 0, 0)
 }
@@ -279,7 +305,10 @@ function randomColor()
 
 function grayScale(color)
 {
-    let g = Math.trunc(color) & 0xff;
+    if (color < 0) color = 0;
+    if (color >= 1) color = 1.0;
+
+    let g = color * 255.0;
 
     return (g << 16) | (g << 8) | g;
 }
@@ -299,8 +328,34 @@ String.prototype.hashCode = function ()
 };
 
 var globalAlpha = 0xff;
+var WIDTH = 800;
+var HEIGHT = 600;
 
 window.onload = () =>
 {
-    main();
+    var btnGen = document.getElementById("gen");
+    var txtIwidth = document.getElementById("iwidth");
+    var txtIheight = document.getElementById("iheight");
+    var txtIscale = document.getElementById("iscale");
+    var txtSeed = document.getElementById("seed");
+    var txtScale = document.getElementById("scale");
+    var txtOctaves = document.getElementById("octaves");
+    var txtLacunarity = document.getElementById("lacu");
+    var txtPersistence = document.getElementById("pers");
+
+    btnGen.onclick = () =>
+    {
+        let iwidth = txtIwidth.value == "" ? 300 : txtIwidth.value;
+        let iheight = txtIheight.value == "" ? 300 : txtIheight.value;
+        let iscale = txtIscale.value == "" ? 2.0 : txtIscale.value;
+        let seed = txtSeed.value == "" ? undefined : txtSeed.value;
+        let scale = txtScale.value == "" ? 2.0 : txtScale.value;
+        let octaves = txtOctaves.value == "" ? 3 : txtOctaves.value;
+        let lacu = txtLacunarity.value == "" ? 3 : txtLacunarity.value;
+        let pers = txtPersistence.value == "" ? 0.2 : txtPersistence.value;
+
+        generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale);
+    }
+
+    btnGen.onclick();
 }
