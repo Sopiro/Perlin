@@ -237,7 +237,7 @@ class Perlin
     }
 }
 
-function generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale)
+function generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale, renderGrayScale)
 {
     let perlin = new Perlin(seed);
 
@@ -255,9 +255,12 @@ function generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale)
         for (let x = 0; x < t.width; x++)
         {
             const xx = x / t.width * scale;
-            const value = perlin.octaveNoise(xx, yy, octaves, lacu, pers);
+            let value = perlin.octaveNoise(xx, yy, octaves, lacu, pers);
+            value = (value + 1) * 0.5; // [-1 ~ 1] -> [0 -> 1]
 
-            t.pixels[x + y * t.width] = grayScale((value + 1) * 0.5);
+            const color = renderGrayScale ? grayScale(value) : colorize(value);
+
+            t.pixels[x + y * t.width] = color;
         }
     }
 
@@ -317,6 +320,37 @@ function grayScale(color)
     return (g << 16) | (g << 8) | g;
 }
 
+function colorize(v)
+{
+    if (v < 0) v = 0;
+    if (v >= 1) v = 1;
+
+    if (v > 0 && v <= 0.35) // Ocean
+    {
+        return 0x0D2851;
+    }
+    else if (v > 0.35 && v <= 0.5)
+    {
+        return 0x173C72;
+    }
+    else if (v > 0.5 && v <= 0.55)
+    {
+        return 0x1D4B8D;
+    }
+    else if (v > 0.55 && v <= 0.6) // Sand
+    {
+        return 0xF9D986;
+    }
+    else if (v > 0.6 && v <= 0.7) // Grass
+    {
+        return 0x689A19;
+    }
+    else if (v > 0.7 && v <= 1.0)
+    {
+        return 0x427E1F
+    }
+}
+
 // https://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
 String.prototype.hashCode = function ()
 {
@@ -346,6 +380,7 @@ window.onload = () =>
     const txtOctaves = document.getElementById("octaves");
     const txtLacunarity = document.getElementById("lacu");
     const txtPersistence = document.getElementById("pers");
+    const ckbGrayscale = document.getElementById("grayscale");
 
     btnGen.onclick = () =>
     {
@@ -353,12 +388,13 @@ window.onload = () =>
         const iheight = txtIheight.value == "" ? 300 : txtIheight.value;
         const iscale = txtIscale.value == "" ? 2.0 : txtIscale.value;
         const seed = txtSeed.value == "" ? undefined : txtSeed.value;
-        const scale = txtScale.value == "" ? 2.0 : txtScale.value;
+        const scale = txtScale.value == "" ? 4.0 : txtScale.value;
         const octaves = txtOctaves.value == "" ? 4 : txtOctaves.value;
         const lacu = txtLacunarity.value == "" ? 3 : txtLacunarity.value;
         const pers = txtPersistence.value == "" ? 0.2 : txtPersistence.value;
+        const grayScale = ckbGrayscale.checked;
 
-        generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale);
+        generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale, grayScale);
     }
 
     btnGen.onclick();
