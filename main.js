@@ -1,3 +1,4 @@
+'use strict'
 
 // https://en.wikipedia.org/wiki/Linear_congruential_generator 
 class PRNG 
@@ -250,11 +251,11 @@ function generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale)
 
     for (let y = 0; y < t.height; y++)
     {
-        let yy = y / t.height * scale;
+        const yy = y / t.height * scale;
         for (let x = 0; x < t.width; x++)
         {
-            let xx = x / t.width * scale;
-            value = perlin.octaveNoise(xx, yy, octaves, lacu, pers);
+            const xx = x / t.width * scale;
+            const value = perlin.octaveNoise(xx, yy, octaves, lacu, pers);
 
             t.pixels[x + y * t.width] = grayScale((value + 1) * 0.5);
         }
@@ -330,32 +331,32 @@ String.prototype.hashCode = function ()
     return hash;
 };
 
-var globalAlpha = 0xff;
-var WIDTH = 600;
-var HEIGHT = 600;
+const globalAlpha = 0xff;
+const WIDTH = 600;
+const HEIGHT = 600;
 
 window.onload = () =>
 {
-    var btnGen = document.getElementById("gen");
-    var txtIwidth = document.getElementById("iwidth");
-    var txtIheight = document.getElementById("iheight");
-    var txtIscale = document.getElementById("iscale");
-    var txtSeed = document.getElementById("seed");
-    var txtScale = document.getElementById("scale");
-    var txtOctaves = document.getElementById("octaves");
-    var txtLacunarity = document.getElementById("lacu");
-    var txtPersistence = document.getElementById("pers");
+    const btnGen = document.getElementById("gen");
+    const txtIwidth = document.getElementById("iwidth");
+    const txtIheight = document.getElementById("iheight");
+    const txtIscale = document.getElementById("iscale");
+    const txtSeed = document.getElementById("seed");
+    const txtScale = document.getElementById("scale");
+    const txtOctaves = document.getElementById("octaves");
+    const txtLacunarity = document.getElementById("lacu");
+    const txtPersistence = document.getElementById("pers");
 
     btnGen.onclick = () =>
     {
-        let iwidth = txtIwidth.value == "" ? 300 : txtIwidth.value;
-        let iheight = txtIheight.value == "" ? 300 : txtIheight.value;
-        let iscale = txtIscale.value == "" ? 2.0 : txtIscale.value;
-        let seed = txtSeed.value == "" ? undefined : txtSeed.value;
-        let scale = txtScale.value == "" ? 2.0 : txtScale.value;
-        let octaves = txtOctaves.value == "" ? 4 : txtOctaves.value;
-        let lacu = txtLacunarity.value == "" ? 3 : txtLacunarity.value;
-        let pers = txtPersistence.value == "" ? 0.2 : txtPersistence.value;
+        const iwidth = txtIwidth.value == "" ? 300 : txtIwidth.value;
+        const iheight = txtIheight.value == "" ? 300 : txtIheight.value;
+        const iscale = txtIscale.value == "" ? 2.0 : txtIscale.value;
+        const seed = txtSeed.value == "" ? undefined : txtSeed.value;
+        const scale = txtScale.value == "" ? 2.0 : txtScale.value;
+        const octaves = txtOctaves.value == "" ? 4 : txtOctaves.value;
+        const lacu = txtLacunarity.value == "" ? 3 : txtLacunarity.value;
+        const pers = txtPersistence.value == "" ? 0.2 : txtPersistence.value;
 
         generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale);
     }
