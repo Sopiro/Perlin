@@ -208,7 +208,11 @@ class Perlin
         n1 = this.dotGridGradient(x1, y1, x, y);
         let ix1 = this.interpolate(n0, n1, fx);
 
-        return this.interpolate(ix0, ix1, fy);
+        // Range [-sqrt(N / 4), sqrt(N / 4)] where N is the noise dimension.
+        // https://digitalfreepen.com/2017/06/20/range-perlin-noise.html
+
+        // By multiflying sqrt(2), the output noise range become [-1 ~ 1]
+        return this.interpolate(ix0, ix1, fy) * 1.4142;
     }
 
     octaveNoise(x, y, octaves, lacunarity, persistence)
@@ -250,10 +254,9 @@ function generate(seed, scale, octaves, lacu, pers, iwidth, iheight, iscale)
         for (let x = 0; x < t.width; x++)
         {
             let xx = x / t.width * scale;
-            // let value = perlin.noise(xx, yy);
             value = perlin.octaveNoise(xx, yy, octaves, lacu, pers);
 
-            t.pixels[x + y * t.width] = grayScale((value * scale + 1) * 0.5);
+            t.pixels[x + y * t.width] = grayScale((value + 1) * 0.5);
         }
     }
 
@@ -350,7 +353,7 @@ window.onload = () =>
         let iscale = txtIscale.value == "" ? 2.0 : txtIscale.value;
         let seed = txtSeed.value == "" ? undefined : txtSeed.value;
         let scale = txtScale.value == "" ? 2.0 : txtScale.value;
-        let octaves = txtOctaves.value == "" ? 3 : txtOctaves.value;
+        let octaves = txtOctaves.value == "" ? 4 : txtOctaves.value;
         let lacu = txtLacunarity.value == "" ? 3 : txtLacunarity.value;
         let pers = txtPersistence.value == "" ? 0.2 : txtPersistence.value;
 
